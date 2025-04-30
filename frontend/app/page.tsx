@@ -6,96 +6,27 @@ import { ResultCard } from "@/components/result-card"
 import { HistoryItem } from "@/components/history-item"
 import { StatsChart } from "@/components/stats-chart"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { DetailedAnalysis } from "@/components/detailed-analysis"
-import { ModelMetrics } from "@/components/model-metrics"
-import { ConfusionMatrix } from "@/components/confusion-matrix"
-import { FeatureImportance } from "@/components/feature-importance"
+import { TextMetrics } from "@/components/text-metrics"
+import { SentimentAnalysis } from "@/components/sentiment-analysis"
+import { KeyPhrasesCard } from "@/components/key-phrases-card"
+import { LanguageAnalysis } from "@/components/language-analysis"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, BarChart, Clock, Info, LineChart, PieChart } from "lucide-react"
+import { AlertCircle, BarChart, Clock, FileText, Heart, KeyRound, Languages } from 'lucide-react'
 import { gsap } from "gsap"
-
-// Define the result type
-interface AnalysisResult {
-  headline: string
-  prediction: string
-  confidence: number
-  keyPhrases?: string[]
-  featureImportance?: Array<{ feature: string; importance: number }>
-  modelAccuracy?: number
-  algorithmUsed?: string
-}
-
-// Define the history item type
-interface HistoryItemType extends AnalysisResult {
-  timestamp: Date
-}
-
-// Define the model metrics type
-interface ModelMetricsType {
-  accuracy: number
-  precision: number
-  recall: number
-  f1Score: number
-  confusionMatrix: {
-    truePositives: number
-    falsePositives: number
-    trueNegatives: number
-    falseNegatives: number
-  }
-}
+import { AnalysisResult, HistoryItem as HistoryItemType } from "@/types/analysis"
 
 export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [history, setHistory] = useState<HistoryItemType[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("result")
-  const [modelMetrics, setModelMetrics] = useState<ModelMetricsType>({
-    accuracy: 0.95,
-    precision: 0.94,
-    recall: 0.96,
-    f1Score: 0.95,
-    confusionMatrix: {
-      truePositives: 193,
-      falsePositives: 0,
-      trueNegatives: 207,
-      falseNegatives: 0,
-    },
-  })
-  const [topFeatures, setTopFeatures] = useState<Array<{ feature: string; importance: number }>>([])
   const headerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
   // Count fake and real news for stats
   const fakeCount = history.filter((item) => item.prediction === "Fake").length
   const realCount = history.filter((item) => item.prediction === "Real").length
-
-  // Fetch model metrics and top features on load
-  useEffect(() => {
-    const fetchModelInfo = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/api/model-info")
-        if (response.ok) {
-          const data = await response.json()
-          if (data.metrics) {
-            setModelMetrics(data.metrics)
-          }
-          if (data.topFeatures) {
-            setTopFeatures(
-              data.topFeatures.map((feature: any) => ({
-                feature: feature.feature,
-                importance: feature.importance,
-              })),
-            )
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching model info:", error)
-      }
-    }
-
-    fetchModelInfo()
-  }, [])
 
   // GSAP animations
   useEffect(() => {
@@ -148,23 +79,11 @@ export default function Home() {
       }
 
       const data = await response.json()
-
-      // Enhanced result with additional information
-      const enhancedResult: AnalysisResult = {
-        headline: data.headline,
-        prediction: data.prediction,
-        confidence: data.confidence,
-        keyPhrases: data.keyPhrases || [],
-        featureImportance: data.featureImportance || [],
-        modelAccuracy: data.modelAccuracy || 0.95,
-        algorithmUsed: data.algorithmUsed || "Random Forest with TF-IDF",
-      }
-
-      setResult(enhancedResult)
+      setResult(data)
 
       // Add to history
       const historyItem: HistoryItemType = {
-        ...enhancedResult,
+        ...data,
         timestamp: new Date(),
       }
 
@@ -212,46 +131,54 @@ export default function Home() {
 
             {result && (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid grid-cols-4 w-full">
+                <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
                   <TabsTrigger value="result" className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4" />
                     Result
                   </TabsTrigger>
-                  <TabsTrigger value="analysis" className="flex items-center gap-2">
-                    <Info className="h-4 w-4" />
-                    Analysis
+                  <TabsTrigger value="text" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Text
                   </TabsTrigger>
-                  <TabsTrigger value="metrics" className="flex items-center gap-2">
-                    <LineChart className="h-4 w-4" />
-                    Metrics
+                  <TabsTrigger value="sentiment" className="flex items-center gap-2">
+                    <Heart className="h-4 w-4" />
+                    Sentiment
                   </TabsTrigger>
-                  <TabsTrigger value="features" className="flex items-center gap-2">
-                    <BarChart className="h-4 w-4" />
-                    Features
+                  <TabsTrigger value="phrases" className="flex items-center gap-2">
+                    <KeyRound className="h-4 w-4" />
+                    Phrases
+                  </TabsTrigger>
+                  <TabsTrigger value="language" className="flex items-center gap-2">
+                    <Languages className="h-4 w-4" />
+                    Language
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="result" className="result-card">
-                  <ResultCard
-                    headline={result.headline}
-                    prediction={result.prediction}
-                    confidence={result.confidence}
+                  <ResultCard result={result} />
+                </TabsContent>
+
+                <TabsContent value="text">
+                  <TextMetrics features={result.features} />
+                </TabsContent>
+
+                <TabsContent value="sentiment">
+                  <SentimentAnalysis sentiment={result.features.sentiment} />
+                </TabsContent>
+
+                <TabsContent value="phrases">
+                  <KeyPhrasesCard 
+                    keyPhrases={result.key_phrases} 
+                    fakePhraseCategories={result.features.fake_phrase_categories}
+                    realPhraseCategories={result.features.real_phrase_categories}
                   />
                 </TabsContent>
 
-                <TabsContent value="analysis">
-                  <DetailedAnalysis result={result} />
-                </TabsContent>
-
-                <TabsContent value="metrics">
-                  <div className="space-y-6">
-                    <ModelMetrics metrics={modelMetrics} />
-                    <ConfusionMatrix matrix={modelMetrics.confusionMatrix} />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="features">
-                  <FeatureImportance features={topFeatures.length > 0 ? topFeatures : result.featureImportance || []} />
+                <TabsContent value="language">
+                  <LanguageAnalysis 
+                    posAnalysis={result.features.pos_analysis}
+                    credibilityIndicators={result.features.credibility_indicators}
+                  />
                 </TabsContent>
               </Tabs>
             )}
@@ -261,7 +188,7 @@ export default function Home() {
             <Card className="border-t-4 border-t-blue-500 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30">
                 <CardTitle className="flex items-center">
-                  <PieChart className="h-5 w-5 mr-2 text-blue-500" />
+                  <BarChart className="h-5 w-5 mr-2 text-blue-500" />
                   Statistics
                 </CardTitle>
                 <CardDescription>Analysis of headlines checked so far</CardDescription>

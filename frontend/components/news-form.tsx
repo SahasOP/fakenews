@@ -1,11 +1,9 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, Search, AlertTriangle, CheckCircle } from "lucide-react"
+import { Loader2, Search, AlertTriangle, CheckCircle } from 'lucide-react'
 import { gsap } from "gsap"
 
 interface NewsFormProps {

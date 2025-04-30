@@ -1,25 +1,19 @@
 "use client"
 
-import { useState } from "react"
-
-import { useRef, useEffect } from "react"
-import { AlertTriangle, CheckCircle, Info } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { AlertTriangle, CheckCircle, Info } from 'lucide-react'
 import { gsap } from "gsap"
 import { Button } from "@/components/ui/button"
+import { HistoryItem as HistoryItemType } from "@/types/analysis"
 
 interface HistoryItemProps {
-  item: {
-    headline: string
-    prediction: string
-    confidence: number
-    timestamp: Date
-  }
+  item: HistoryItemType
 }
 
 export function HistoryItem({ item }: HistoryItemProps) {
-  const { headline, prediction, confidence, timestamp } = item
+  const { text, prediction, confidence_percentage, timestamp } = item
   const isFake = prediction === "Fake"
-  const confidencePercent = Math.round(confidence * 100)
+  const confidencePercent = confidence_percentage
   const itemRef = useRef<HTMLDivElement>(null)
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -89,15 +83,15 @@ export function HistoryItem({ item }: HistoryItemProps) {
           <span
             className={`text-sm font-medium ${isFake ? "text-red-700 dark:text-red-400" : "text-green-700 dark:text-green-400"}`}
           >
-            {prediction} ({confidencePercent}%)
+            {prediction} ({Math.round(confidencePercent)}%)
           </span>
         </div>
         <span className="text-xs text-gray-500 dark:text-gray-400">{formattedTime}</span>
       </div>
 
-      <p className={`mt-1 text-sm text-gray-700 dark:text-gray-300 ${isExpanded ? "" : "line-clamp-2"}`}>{headline}</p>
+      <p className={`mt-1 text-sm text-gray-700 dark:text-gray-300 ${isExpanded ? "" : "line-clamp-2"}`}>{text}</p>
 
-      {headline.length > 60 && (
+      {text.length > 60 && (
         <Button variant="ghost" size="sm" className="text-xs mt-1 h-6 px-2" onClick={toggleExpand}>
           <Info className="h-3 w-3 mr-1" />
           {isExpanded ? "Show less" : "Show more"}
